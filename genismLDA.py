@@ -1,11 +1,16 @@
 from pprint import pprint
-
+import os
+# Import fix
+try:
+  from scipy.sparse.sparsetools.csr import _csr
+except:
+  from scipy.sparse import sparsetools as _csr
+from gensim.models.coherencemodel import CoherenceModel
 from gensim import corpora
 from nltk.corpus import stopwords
-from gensim.utils import lemmatize, simple_preprocess
+from gensim.utils import simple_preprocess
 import gensim, spacy
-from gensim.models import CoherenceModel
-import re, numpy as np
+import re
 
 
 def clean_data(description_movie):
@@ -26,7 +31,7 @@ def process_words(data_words, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV']):
 
     def stop_words():
         stop_words = stopwords.words('english')
-        stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
+        stop_words.extend(['from', 'subject', 're', 'edu', 'use', 'scene', ' film'])
         return stop_words
     stop_words = stop_words()
 
@@ -46,6 +51,7 @@ def process_words(data_words, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV']):
     texts_out = [[word for word in simple_preprocess(str(doc)) if word not in stop_words] for doc in texts_out]
     return texts_out
 
+
 def lda_model(data_ready):
     # Create Dictionary
     id2word = corpora.Dictionary(data_ready)
@@ -54,7 +60,7 @@ def lda_model(data_ready):
     # Build LDA model
     lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
                                                 id2word=id2word,
-                                                num_topics=4,
+                                                num_topics=1,
                                                 random_state=100,
                                                 update_every=1,
                                                 chunksize=10,
@@ -63,8 +69,19 @@ def lda_model(data_ready):
                                                 iterations=100,
                                                 per_word_topics=True)
     pprint(lda_model.print_topics())
-    return lda_model.print_topics()
+    return lda_model
 
+def lda_model_mallet(data_ready):
+    os.environ['MALLET_HOME'] = 'D:\mallet-2.0.8'
+    mallet_path = r'D:\mallet-2.0.8\bin\mallet'
+    # Create Dictionary
+    id2word = corpora.Dictionary(data_ready)
+    # Create Corpus: Term Document Frequency
+    corpus = [id2word.doc2bow(text) for text in data_ready]
+    ldamallet = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=1, id2word=id2word)
+    # Show Topics
+    pprint(ldamallet.show_topics(formatted=False))
+    return ldamallet
 
 
 
