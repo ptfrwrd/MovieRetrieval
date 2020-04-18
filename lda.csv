@@ -1,0 +1,2 @@
+,LDA,Topics,Weight
+0,"LdaModel(num_terms=34, num_topics=10, decay=0.5, chunksize=10)","['game', 'arrive', 'friend', 'reverse', 'player', 'responsible', 'intoxication', 'physically', 'pitcher', 'husband']","[0.029411772, 0.029411769, 0.029411769, 0.029411769, 0.029411767, 0.029411767, 0.029411767, 0.029411767, 0.029411767, 0.029411767]"

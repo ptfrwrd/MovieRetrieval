@@ -52,36 +52,33 @@ def process_words(data_words, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV']):
     return texts_out
 
 
-def lda_model(data_ready):
+def lda_model(data_ready, data):
     # Create Dictionary
     id2word = corpora.Dictionary(data_ready)
+    dictionary = corpora.Dictionary(data)
+
     # Create Corpus: Term Document Frequency
     corpus = [id2word.doc2bow(text) for text in data_ready]
     # Build LDA model
     lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
                                                 id2word=id2word,
-                                                num_topics=1,
-                                                random_state=100,
+                                                num_topics=10,
+                                                random_state=42,
                                                 update_every=1,
                                                 chunksize=10,
                                                 passes=10,
                                                 alpha='symmetric',
                                                 iterations=100,
                                                 per_word_topics=True)
-    pprint(lda_model.print_topics())
+    #pprint(lda_model.print_topics())
+    # Compute Perplexity
+    print('\nPerplexity: ', lda_model.log_perplexity(corpus))  # a measure of how good the model is. lower the better.
+    # Compute Coherence Score
+    coherence_model_lda = CoherenceModel(model=lda_model, texts=data_ready, dictionary=dictionary, coherence='c_v')
+    coherence_lda = coherence_model_lda.get_coherence()
+    print('\nCoherence Score: ', coherence_lda)
     return lda_model
 
-def lda_model_mallet(data_ready):
-    os.environ['MALLET_HOME'] = 'D:\mallet-2.0.8'
-    mallet_path = r'D:\mallet-2.0.8\bin\mallet'
-    # Create Dictionary
-    id2word = corpora.Dictionary(data_ready)
-    # Create Corpus: Term Document Frequency
-    corpus = [id2word.doc2bow(text) for text in data_ready]
-    ldamallet = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=1, id2word=id2word)
-    # Show Topics
-    pprint(ldamallet.show_topics(formatted=False))
-    return ldamallet
 
 
 
