@@ -1,6 +1,6 @@
 from multiprocessing.dummy import freeze_support
 import pandas as pd
-import lesk as lk
+import alg_lesk as lesk
 # Import fix
 try:
   from scipy.sparse.sparsetools.csr import _csr
@@ -14,6 +14,9 @@ import gensim, spacy
 import re
 import matplotlib.pyplot as plt
 import numpy as np
+import random
+from nltk.corpus import wordnet as wn
+
 
 
 def clean_data(text):
@@ -67,37 +70,83 @@ def create_lda_model(data_ready):
     lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus, id2word=id2word, num_topics=6, random_state=100,
                                                     update_every=1, chunksize=1, iterations=100)
     # a measure of how good the model is. lower the better.
-    print('\nPerplexity: ', lda_model.log_perplexity(corpus))
-    coherence_model_lda = CoherenceModel(model=lda_model, corpus=corpus, texts=data_ready,  coherence='c_v')
-    coherence_lda = coherence_model_lda.get_coherence()
+    #print('\nPerplexity: ', lda_model.log_perplexity(corpus))
+    #coherence_model_lda = CoherenceModel(model=lda_model, corpus=corpus, texts=data_ready,  coherence='c_v')
+    #coherence_lda = coherence_model_lda.get_coherence()
 
-    print('\nCoherence Score: ', coherence_lda)
-    print('\n Topics: ', lda_model.print_topics())
+    #print('\nCoherence Score: ', coherence_lda)
+    #print('\n Topics: ', lda_model.print_topics())
 
-    return lda_model, coherence_lda
+    return lda_model #, coherence_lda
+
+
+def show_topics(lda_model_res):
+   topics = []
+   for i in range(10):
+      topics.append(lda_model_res.show_topics(formatted=False)[0][1][i][0])
+   return topics
+
+
+def remove_char(s):
+    result = s[1: -1]
+    return result
+
+
+def create_topic(topic):
+    topic = remove_char(topic)
+    topic = topic.split(", ")
+    new_topic = []
+    for el in topic:
+        el = remove_char(el)
+        new_topic.append(el)
+    return new_topic
 
 
 if __name__ == '__main__':
+    lda_data = pd.read_csv('LDA.csv', encoding='unicode_escape')
+    test_data = pd.read_csv('test.csv', encoding='unicode_escape')
+    random_film_index = random.randint(0, len(test_data) - 1)
+    user_description = test_data['Plot'][random_film_index]
+    user_description = clean_data(user_description)
+    user_description = process_words(user_description)
+    lda_user = create_lda_model(user_description)
+    user_topics = show_topics(lda_user)
+    lesk_user_topics = lesk.do_wsd(user_topics)
+    lesk_user_topics = list(filter(None, lesk_user_topics))
+    similarity = []
+    for i in range(len(lda_data)):
+        topic_lda = lda_data['Topic_LDA'][i]
+        topic_lda = create_topic(topic_lda)
+        lesk_topics = lesk.do_wsd(topic_lda)
+        lesk_topics = list(filter(None, lesk_topics))
+        similarity_temp = lesk.find_semantics(lesk_user_topics, lesk_topics)
+        similarity.append(similarity_temp)
+    film_index = similarity.index(min(similarity))
+    print("User`s film: ", test_data['Title'][random_film_index])
+    print("Film`s title: ", test_data['Title'][film_index])
+    print("Similarity: ", min(similarity))
 
-    data = pd.read_csv('wiki_movie_plots_deduped.csv', encoding='unicode_escape')
+
+    """data = pd.read_csv('wiki_movie_plots_deduped.csv', encoding='unicode_escape')
     data = data.loc[data['Release Year'] == 2015]
     description_movie = pd.DataFrame({"Plot": data['Plot'], "Title": data['Title']})
     description_movie = description_movie.dropna()
     description_movie = description_movie[description_movie['Plot'].apply(len) > 400]
     description_movie = description_movie.reset_index()
-    max_index = []
-    '''for index in range(len(description_movie)):
-        plot = description_movie['Plot'][index]
+
+    film = []
+    topics = []
+    index = []
+    for i in range(len(description_movie)):
+        plot = description_movie['Plot'][i]
         plot = clean_data(plot)
         plot = process_words(plot)
         lda = create_lda_model(plot)
-        print("Итерация = ", index, "  индекс = ", lda[1])
-        max_index.append(lda[1] + 1)
+        topics.append(show_topics(lda))
+        film.append(description_movie['Title'][i])
+        index.append(i)
 
-    res_index = np.mean(max_index)
-    print("средний индекс: ", res_index)
-'''
-    user_description = input()
-    user_description = clean_data(user_description)
-    user_description = process_words(user_description)
-    lda_res = create_lda_model(user_description)
+    df = pd.DataFrame({"Topic_LDA": topics,
+                       "Title": film}, index=index)
+
+    df.to_csv("LDA.csv", encoding='unicode_escape')"""

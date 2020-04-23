@@ -28,8 +28,7 @@ def find_semantics(user_sentence, topic_sentence):
 
             else:
                 temp_similarity.append(1)
-            
-        print(temp_similarity)
+
         temp = min(temp_similarity)
         mean_similarity.append(temp)
     return np.mean(mean_similarity)
@@ -40,7 +39,4 @@ if __name__ == '__main__':
     topic_words = ["amour", "loner", "bad", "escape", "find", "tell", "blind", "leave", "begin", "animal"]
     user_words_wsd = do_wsd(user_words)
     topic_words_wsd = do_wsd(topic_words)
-    print(user_words_wsd)
-    print(topic_words_wsd)
     sim = find_semantics(user_words_wsd, topic_words_wsd)
-    print(sim)
