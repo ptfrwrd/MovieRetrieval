@@ -104,49 +104,34 @@ def create_topic(topic):
 
 if __name__ == '__main__':
     lda_data = pd.read_csv('LDA.csv', encoding='unicode_escape')
-    test_data = pd.read_csv('test.csv', encoding='unicode_escape')
-    random_film_index = random.randint(0, len(test_data) - 1)
-    user_description = test_data['Plot'][random_film_index]
-    user_description = clean_data(user_description)
-    user_description = process_words(user_description)
-    lda_user = create_lda_model(user_description)
-    user_topics = show_topics(lda_user)
-    lesk_user_topics = lesk.do_wsd(user_topics)
-    lesk_user_topics = list(filter(None, lesk_user_topics))
-    similarity = []
-    for i in range(len(lda_data)):
-        topic_lda = lda_data['Topic_LDA'][i]
-        topic_lda = create_topic(topic_lda)
-        lesk_topics = lesk.do_wsd(topic_lda)
-        lesk_topics = list(filter(None, lesk_topics))
-        similarity_temp = lesk.find_semantics(lesk_user_topics, lesk_topics)
-        similarity.append(similarity_temp)
-    film_index = similarity.index(min(similarity))
-    print("User`s film: ", test_data['Title'][random_film_index])
-    print("Film`s title: ", test_data['Title'][film_index])
-    print("Similarity: ", min(similarity))
+    test_data = pd.read_csv('test_half_4.csv', encoding='unicode_escape')
+    precision, TP, FP = 0, 0, 0
+    for j in range(len(test_data) // 3):
+        print("итарация: ", j)
+        user_description = test_data['Plot'][j]
+        expected_response = test_data['Title'][j]
+        user_description = clean_data(user_description)
+        user_description = process_words(user_description)
+        lda_user = create_lda_model(user_description)
+        user_topics = show_topics(lda_user)
+        lesk_user_topics = lesk.do_wsd(user_topics)
+        lesk_user_topics = list(filter(None, lesk_user_topics))
+        similarity = []
+        for i in range(len(lda_data)):
+            topic_lda = lda_data['Topic_LDA'][i]
+            topic_lda = create_topic(topic_lda)
+            lesk_topics = lesk.do_wsd(topic_lda)
+            lesk_topics = list(filter(None, lesk_topics))
+            similarity_temp = lesk.find_semantics(lesk_user_topics, lesk_topics)
+            similarity.append(similarity_temp)
+        film_index = similarity.index(min(similarity))
+        algorithm_response = test_data['Title'][film_index]
+        similarity_response = min(similarity)
+        if expected_response == algorithm_response:
+            TP += 1
+        else:
+            FP += 1
+    precision = TP/(TP + FP)
+    print(precision)
 
 
-    """data = pd.read_csv('wiki_movie_plots_deduped.csv', encoding='unicode_escape')
-    data = data.loc[data['Release Year'] == 2015]
-    description_movie = pd.DataFrame({"Plot": data['Plot'], "Title": data['Title']})
-    description_movie = description_movie.dropna()
-    description_movie = description_movie[description_movie['Plot'].apply(len) > 400]
-    description_movie = description_movie.reset_index()
-
-    film = []
-    topics = []
-    index = []
-    for i in range(len(description_movie)):
-        plot = description_movie['Plot'][i]
-        plot = clean_data(plot)
-        plot = process_words(plot)
-        lda = create_lda_model(plot)
-        topics.append(show_topics(lda))
-        film.append(description_movie['Title'][i])
-        index.append(i)
-
-    df = pd.DataFrame({"Topic_LDA": topics,
-                       "Title": film}, index=index)
-
-    df.to_csv("LDA.csv", encoding='unicode_escape')"""
